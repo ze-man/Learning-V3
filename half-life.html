@@ -439,10 +439,15 @@
 			}
 		};
 		window.onerror = function(event) {
-			if (mounted)
-				FS.syncfs(false, function(err) {
-					Module.print('Saving IDBFS: ' + err);
-				});
+			if (mounted && typeof FS !== 'undefined' && typeof FS.syncfs === 'function') {
+				try {
+					FS.syncfs(false, function(err) {
+						if (err) Module.print('Saving IDBFS (onerror): ' + err);
+					});
+				} catch (e) {
+					Module.print('FS.syncfs failed on error handler: ' + e);
+				}
+			}
 			if (('' + event).indexOf('SimulateInfiniteLoop') > 0)
 				return;
 			var text = 'Exception thrown: ' + event;
@@ -608,12 +613,20 @@
 				Module.print('Failed to initialize BrowserFS: ' + e);
 			}
 
-			if (radioChecked('IndexedDB')) {
+			if (radioChecked('IndexedDB') && typeof FS !== 'undefined' && typeof IDBFS !== 'undefined') {
 				FS.mount(IDBFS, {}, '/xash');
-				FS.syncfs(true, function(err) {
-					if (err) Module.print('Loading IDBFS: ' + err);
-				});
-				mounted = true;
+				if (typeof FS.syncfs === 'function') {
+					try {
+						FS.syncfs(true, function(err) {
+							if (err) Module.print('Loading IDBFS: ' + err);
+						});
+						mounted = true;
+					} catch (e) {
+						Module.print('FS.syncfs failed during init: ' + e);
+					}
+				} else {
+					Module.print('IDBFS sync not available on this platform');
+				}
 			}
 
 			if (radioChecked('LocalStorage') && mfs) {
