@@ -207,35 +207,6 @@
       border-radius: 12px;
     }
 
-    /* Overlay for Games */
-    #game-overlay {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 2000;
-      display: none;
-      flex-direction: column;
-    }
-
-    #game-overlay iframe {
-      flex: 1;
-      border: none;
-    }
-
-    #close-game {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      background: #ff2d55;
-      color: white;
-      border: none;
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      font-size: 20px;
-      z-index: 2001;
-    }
-
     /* Settings */
     #settings-panel {
       position: fixed;
@@ -392,11 +363,6 @@
     <iframe src="https://docs.google.com/document/d/1iDgURNHAHjC1LSzZ7y6IxyJmem_bS4d22apmq37zQfE/" frameborder="0"></iframe>
   </div>
 
-  <div id="game-overlay">
-    <button id="close-game" onclick="closeGame()">✕</button>
-    <iframe id="game-frame" src=""></iframe>
-  </div>
-
   <div id="settings-panel">
     <div class="settings-content">
       <h2 style="text-align:center; color:var(--neon); margin-bottom:25px;">SETTINGS</h2>
@@ -442,23 +408,14 @@
     setInterval(updateStatus, 1000);
     updateStatus();
 
-    const overlay = document.getElementById('game-overlay');
-    const gameFrame = document.getElementById('game-frame');
-
     document.querySelectorAll('.game-card').forEach(card => {
       card.addEventListener('click', () => {
         const url = card.getAttribute('data-url');
         if (url) {
-          gameFrame.src = url;
-          overlay.style.display = 'flex';
+          window.open(url, '_blank');
         }
       });
     });
-
-    function closeGame() {
-      gameFrame.src = '';
-      overlay.style.display = 'none';
-    }
 
     function openSettings() {
       document.getElementById('settings-panel').style.display = 'flex';
