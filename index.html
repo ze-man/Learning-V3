@@ -293,7 +293,14 @@
     }
 
     #movies {
-      background: linear-gradient(180deg, #07090f 0%, #0a0a12 35%, #0a0a12 100%);
+      background: linear-gradient(180deg, rgba(7, 9, 15, 0.96) 0%, rgba(10, 12, 20, 0.96) 46%, rgba(8, 10, 18, 1) 100%);
+    }
+
+    #movies .grid {
+      background: rgba(5, 10, 20, 0.6);
+      border-radius: 30px;
+      padding: 24px;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.3);
     }
 
     .movies-bar {
@@ -303,10 +310,10 @@
       gap: 18px;
       align-items: center;
       margin-bottom: 24px;
-      padding: 18px 20px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
+      padding: 18px 22px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 30px;
       box-shadow: inset 0 0 40px rgba(255,255,255,0.03);
     }
 
@@ -410,8 +417,13 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.65) 100%);
+      background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.28) 100%);
       pointer-events: none;
+      transition: background 0.3s ease;
+    }
+
+    .movie-card:hover::after {
+      background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.35) 100%);
     }
 
     .game-name {
@@ -647,6 +659,7 @@
       loadedOnce: false,
     };
     let currentMedia = 'movie';
+    let lastPlayerUrl = '';
 
     function switchTab(n) {
       document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -785,7 +798,7 @@
 
     function injectPlayer(type = 'movie') {
       const slot = document.getElementById('video-slot');
-      slot.innerHTML = '';
+      slot.innerHTML = '<div style="color:#ccc; padding:28px; text-align:center; font-size:16px;">Loading player…</div>';
       const id = type === 'tv' ? tvState.activeId : movieState.activeId;
       if (!id) {
         slot.innerHTML = '<div style="color:#ddd; padding:24px;">No selection made.</div>';
@@ -795,6 +808,7 @@
       const src = type === 'tv'
         ? `https://vidlink.pro/tv/${id}/1/1`
         : `https://vidlink.pro/movie/${id}`;
+      lastPlayerUrl = src;
 
       const iframe = document.createElement('iframe');
       iframe.src = src;
@@ -804,7 +818,23 @@
       iframe.allowFullscreen = true;
       iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
       iframe.referrerPolicy = 'no-referrer';
-      slot.appendChild(iframe);
+      iframe.onload = () => {
+        slot.innerHTML = '';
+        slot.appendChild(iframe);
+      };
+      iframe.onerror = () => {
+        slot.innerHTML = `<div style="color:#eee; padding:24px; text-align:center;">
+          Player failed to load.<br>
+          <button style="margin-top:14px;padding:12px 20px;border:none;border-radius:999px;background:var(--neon);color:#050b16;cursor:pointer;">Open in new tab</button>
+        </div>`;
+        slot.querySelector('button').onclick = openExternalPlayer;
+      };
+    }
+
+    function openExternalPlayer() {
+      if (lastPlayerUrl) {
+        window.open(lastPlayerUrl, '_blank');
+      }
     }
 
     function closePlayer() {
