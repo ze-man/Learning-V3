@@ -166,11 +166,17 @@
       padding: 20px;
     }
 
+    #games .grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 22px;
+      padding: 20px;
+    }
+
     .game-card {
       background: rgba(20, 20, 35, 0.8);
       border: 2px solid rgba(0, 242, 255, 0.3);
       border-radius: 16px;
-      padding: 15px;
+      padding: 20px 16px;
       text-align: center;
       transition: all 0.4s;
     }
@@ -285,17 +291,17 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.96);
       z-index: 4000;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
     }
 
     .player-window {
-      width: min(1200px, 98vw);
-      height: min(92vh, 820px);
+      width: 100vw;
+      height: 100vh;
       background: #090a12;
-      border: 2px solid var(--neon);
-      border-radius: 22px;
+      border: none;
+      border-radius: 0;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -303,7 +309,8 @@
 
     #video-slot {
       flex: 1;
-      min-height: 520px;
+      width: 100%;
+      height: 100%;
       background: #000;
     }
 
