@@ -247,6 +247,25 @@
       margin-bottom: 22px;
     }
 
+    .mini-tab {
+      padding: 10px 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: #ddd;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.25s ease;
+    }
+
+    .mini-tab.active,
+    .mini-tab:hover {
+      background: rgba(0, 242, 255, 0.14);
+      border-color: var(--neon);
+      color: white;
+    }
+
     #movies-search {
       flex: 1 1 360px;
       min-width: 260px;
@@ -504,8 +523,11 @@
 
   <div id="movies" class="content">
     <div class="movies-bar">
-      <h2>Movies</h2>
-      <input id="movies-search" type="text" placeholder="Search titles..." oninput="searchMovies(this.value)" />
+      <div style="display:flex; gap:12px; align-items:center;">
+        <button class="mini-tab active" id="btn-movies" onclick="switchMedia('movie')">MOVIES</button>
+        <button class="mini-tab" id="btn-tvshows" onclick="switchMedia('tv')">TV SHOWS</button>
+      </div>
+      <input id="movies-search" type="text" placeholder="Search movies..." oninput="searchMedia(this.value)" />
     </div>
     <div class="grid" id="movies-grid"></div>
   </div>
@@ -552,6 +574,13 @@
       timer: null,
       loadedOnce: false,
     };
+    let tvState = {
+      activeId: null,
+      activeTitle: '',
+      timer: null,
+      loadedOnce: false,
+    };
+    let currentMedia = 'movie';
 
     function switchTab(n) {
       document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -568,9 +597,26 @@
       }
     }
 
-    function searchMovies(query) {
-      clearTimeout(movieState.timer);
-      movieState.timer = setTimeout(() => fetchMovies(query.trim()), 300);
+    function switchMedia(mode) {
+      currentMedia = mode;
+      document.getElementById('btn-movies').classList.toggle('active', mode === 'movie');
+      document.getElementById('btn-tvshows').classList.toggle('active', mode === 'tv');
+      document.getElementById('movies-search').placeholder = mode === 'movie' ? 'Search movies...' : 'Search shows...';
+      if (mode === 'movie') {
+        fetchMovies(document.getElementById('movies-search').value.trim());
+      } else {
+        fetchTv(document.getElementById('movies-search').value.trim());
+      }
+    }
+
+    function searchMedia(query) {
+      if (currentMedia === 'movie') {
+        clearTimeout(movieState.timer);
+        movieState.timer = setTimeout(() => fetchMovies(query.trim()), 300);
+      } else {
+        clearTimeout(tvState.timer);
+        tvState.timer = setTimeout(() => fetchTv(query.trim()), 300);
+      }
     }
 
     async function fetchMovies(query = '') {
@@ -614,24 +660,78 @@
       }
     }
 
+    async function fetchTv(query = '') {
+      const grid = document.getElementById('movies-grid');
+      const endpoint = query
+        ? `https://api.themoviedb.org/3/search/tv?api_key=${API_KEY}&query=${encodeURIComponent(query)}`
+        : `https://api.themoviedb.org/3/tv/popular?api_key=${API_KEY}`;
+
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (!data.results) {
+          grid.innerHTML = '<p style="color:#bbb;">No shows found.</p>';
+          return;
+        }
+
+        grid.innerHTML = '';
+        data.results.forEach(item => {
+          if (!item.poster_path) return;
+          const card = document.createElement('div');
+          card.className = 'movie-card';
+          card.title = item.name;
+          const year = (item.first_air_date || item.first_air_date || '').slice(0, 4) || 'N/A';
+          card.innerHTML = `
+            <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="${item.name}">
+            <div class="movie-meta">
+              <div class="movie-title">${item.name}</div>
+              <div class="movie-year">${year}</div>
+            </div>
+          `;
+          card.onclick = () => openTv(item.id, item.name);
+          grid.appendChild(card);
+        });
+
+        if (!grid.children.length) {
+          grid.innerHTML = '<p style="color:#bbb;">No shows found.</p>';
+        }
+      } catch (error) {
+        console.error('TV API error', error);
+        grid.innerHTML = '<p style="color:#bbb;">Unable to load shows at the moment.</p>';
+      }
+    }
+
     function openMovie(id, title) {
       movieState.activeId = id;
       movieState.activeTitle = title;
       document.getElementById('player-title').innerText = title;
       document.getElementById('player-modal').style.display = 'flex';
-      injectPlayer();
+      injectPlayer('movie');
     }
 
-    function injectPlayer() {
+    function openTv(id, title) {
+      tvState.activeId = id;
+      tvState.activeTitle = title;
+      document.getElementById('player-title').innerText = title;
+      document.getElementById('player-modal').style.display = 'flex';
+      injectPlayer('tv');
+    }
+
+    function injectPlayer(type = 'movie') {
       const slot = document.getElementById('video-slot');
       slot.innerHTML = '';
-      if (!movieState.activeId) {
-        slot.innerHTML = '<div style="color:#ddd; padding:24px;">No movie selected.</div>';
+      const id = type === 'tv' ? tvState.activeId : movieState.activeId;
+      if (!id) {
+        slot.innerHTML = '<div style="color:#ddd; padding:24px;">No selection made.</div>';
         return;
       }
 
+      const src = type === 'tv'
+        ? `https://vidlink.pro/tv/${id}/1/1`
+        : `https://vidlink.pro/movie/${id}`;
+
       const iframe = document.createElement('iframe');
-      iframe.src = `https://vidlink.pro/movie/${movieState.activeId}`;
+      iframe.src = src;
       iframe.style.width = '100%';
       iframe.style.height = '100%';
       iframe.style.border = 'none';
